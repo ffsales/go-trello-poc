@@ -11,11 +11,11 @@ type configuration struct {
 }
 
 type DB struct {
-	Host     string `properties:"host",default="local"`
-	Port     string `properties:"port",default="3306"`
-	User     string `properties:"user",default="root"`
-	Pass     string `properties:"pass",default="123456"`
-	Database string `properties:"database_name",default="go-trello"`
+	Host     string `properties:"host"`
+	Port     string `properties:"port"`
+	User     string `properties:"user"`
+	Pass     string `properties:"pass"`
+	Database string `properties:"database_name"`
 }
 
 var conf *configuration
@@ -32,7 +32,7 @@ func init() {
 	conf.DbConfig = DB{
 		Host:     pf.MustGet("host"),
 		Port:     pf.MustGet("port"),
-		User:     pf.MustGet("port"),
+		User:     pf.MustGet("user"),
 		Pass:     pf.MustGet("pass"),
 		Database: pf.MustGet("database_name"),
 	}
