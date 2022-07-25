@@ -2,38 +2,38 @@ package repository
 
 import (
 	"database/sql"
-	"log"
 
 	"github.com/ffsales/go-trello-poc/models"
+	"github.com/ffsales/go-trello-poc/utils"
 )
 
-func Insert(conn *sql.DB, card models.Card) (models.Card, error) {
+func InsertCard(conn *sql.DB, card models.Card) (models.Card, error) {
 
-	stmt, err := conn.Prepare("insert into card(name, finished) values (?, ?)")
-	returnError(err)
-	res, err := stmt.Exec(card.Name, card.Finished)
-	returnError(err)
+	stmt, err := conn.Prepare("insert into card(name, finished, id_list) values (?, ?, ?)")
+	utils.ReturnError(err)
+	res, err := stmt.Exec(card.Name, card.Finished, card.IdList)
+	utils.ReturnError(err)
 
 	card.Id, err = res.LastInsertId()
 
 	return card, err
 }
 
-func Get(conn *sql.DB, id int) (models.Card, error) {
+func GetCard(conn *sql.DB, id int) (models.Card, error) {
 
 	row := conn.QueryRow("select id, name, finished from card where id = ?", id)
 	card := new(models.Card)
 
 	err := row.Scan(&card.Id, &card.Name, &card.Finished)
-	returnError(err)
+	utils.ReturnError(err)
 
 	return *card, err
 }
 
-func GetAll(conn *sql.DB) ([]models.Card, error) {
+func GetAllCards(conn *sql.DB) ([]models.Card, error) {
 
 	rows, err := conn.Query("select id, name, finished from card")
-	returnError(err)
+	utils.ReturnError(err)
 	defer rows.Close()
 
 	var cards []models.Card
@@ -46,27 +46,20 @@ func GetAll(conn *sql.DB) ([]models.Card, error) {
 	return cards, err
 }
 
-func Update(conn *sql.DB, card *models.Card) (int64, error) {
+func UpdateCard(conn *sql.DB, card *models.Card) (int64, error) {
 	res, err := conn.Exec("update card set name = ?, finished = ? where id = ?", card.Name, card.Finished, card.Id)
-	returnError(err)
+	utils.ReturnError(err)
 
 	rows, err := res.RowsAffected()
 
 	return rows, err
 }
 
-func Delete(conn *sql.DB, id int) (rows int64, err error) {
+func DeleteCard(conn *sql.DB, id int) (rows int64, err error) {
 	res, err := conn.Exec("delete from card where id = ?", id)
-	returnError(err)
+	utils.ReturnError(err)
 
 	rows, err = res.RowsAffected()
 
 	return
-}
-
-func returnError(err error) {
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
 }

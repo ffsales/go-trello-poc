@@ -21,6 +21,14 @@ func main() {
 
 	// fmt.Println(conn.Ping())
 
+	// testInsertBoard(conn)
+	// testDeleteBoard(conn)
+
+	// testInsertList(conn)
+	// testGetList(conn)
+	// testGetAllLists(conn)
+	// testDeleteList(conn)
+
 	// testInsertCard(conn)
 	// testGetCard(conn)
 	// testGetAllCards(conn)
@@ -28,20 +36,79 @@ func main() {
 	// testDeleteCard(conn)
 }
 
+func testInsertBoard(conn *sql.DB) {
+	var board models.Board = models.Board{
+		Name:        "Teste",
+		Description: "Board de teste",
+	}
+
+	newBoard, err := repository.InsertBoard(conn, board)
+	fmt.Println(err)
+	fmt.Println(newBoard)
+}
+
+func testDeleteBoard(conn *sql.DB) {
+
+	fmt.Println(repository.GetAllBoards(conn))
+
+	repository.DeleteBoard(conn, 2)
+
+	fmt.Println(repository.GetAllBoards(conn))
+}
+
+func testInsertList(conn *sql.DB) {
+	var list models.List = models.List{
+		Name:    "Teste",
+		Order:   1,
+		IdBoard: 3,
+	}
+
+	newList, err := repository.InsertList(conn, list)
+	fmt.Println(err)
+	fmt.Println(newList)
+}
+
+func testGetList(conn *sql.DB) {
+
+	list, err := repository.GetList(conn, 3)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(list)
+}
+
+func testGetAllLists(conn *sql.DB) {
+	lists, err := repository.GetAllLists(conn)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(lists)
+}
+
+func testDeleteList(conn *sql.DB) {
+
+	fmt.Println(repository.GetAllLists(conn))
+
+	repository.DeleteList(conn, 5)
+
+	fmt.Println(repository.GetAllLists(conn))
+}
+
 func testInsertCard(conn *sql.DB) {
 	var card models.Card = models.Card{
 		Name:     "Teste",
 		Finished: true,
+		IdList:   5,
 	}
 
-	newCard, err := repository.Insert(conn, card)
+	newCard, err := repository.InsertCard(conn, card)
 	fmt.Println(err)
 	fmt.Println(newCard)
 }
 
 func testGetCard(conn *sql.DB) {
 
-	card, err := repository.Get(conn, 1)
+	card, err := repository.GetCard(conn, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,7 +116,7 @@ func testGetCard(conn *sql.DB) {
 }
 
 func testGetAllCards(conn *sql.DB) {
-	cards, err := repository.GetAll(conn)
+	cards, err := repository.GetAllCards(conn)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -62,18 +129,18 @@ func testUpdateCard(conn *sql.DB) {
 	card.Name = "Meio"
 	card.Finished = true
 
-	rows, _ := repository.Update(conn, card)
+	rows, _ := repository.UpdateCard(conn, card)
 	fmt.Println(rows)
 
-	newCard, _ := repository.Get(conn, int(card.Id))
+	newCard, _ := repository.GetCard(conn, int(card.Id))
 	fmt.Println(newCard)
 }
 
 func testDeleteCard(conn *sql.DB) {
 
-	fmt.Println(repository.GetAll(conn))
+	fmt.Println(repository.GetAllCards(conn))
 
-	repository.Delete(conn, 7)
+	repository.DeleteCard(conn, 7)
 
-	fmt.Println(repository.GetAll(conn))
+	fmt.Println(repository.GetAllCards(conn))
 }
