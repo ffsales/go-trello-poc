@@ -4,11 +4,15 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/ffsales/go-trello-poc/config"
 	"github.com/ffsales/go-trello-poc/db"
+	"github.com/ffsales/go-trello-poc/handlers"
 	"github.com/ffsales/go-trello-poc/models"
 	"github.com/ffsales/go-trello-poc/repository"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 )
 
 func main() {
@@ -18,6 +22,16 @@ func main() {
 
 	conn := db.GetConnection()
 	defer conn.Close()
+
+	router := chi.NewRouter()
+
+	router.Use(middleware.Logger)
+
+	boardResource := handlers.GetResource()
+
+	router.Get("/go-trello/boards", boardResource.ListBoards)
+
+	http.ListenAndServe(":3000", router)
 
 	// fmt.Println(conn.Ping())
 
@@ -34,6 +48,10 @@ func main() {
 	// testGetAllCards(conn)
 	// testUpdateCard(conn)
 	// testDeleteCard(conn)
+}
+
+func FirstTest(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("welcome"))
 }
 
 func testInsertBoard(conn *sql.DB) {
