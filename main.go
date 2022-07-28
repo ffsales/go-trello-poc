@@ -30,6 +30,7 @@ func main() {
 	boardResource := handlers.GetResource()
 
 	router.Get("/go-trello/boards", boardResource.ListBoards)
+	router.Get("/go-trello/boards/{boardId}", boardResource.GetBoard)
 
 	http.ListenAndServe(":3000", router)
 

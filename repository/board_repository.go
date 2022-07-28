@@ -20,7 +20,7 @@ func InsertBoard(conn *sql.DB, board models.Board) (models.Board, error) {
 }
 
 func GetBoard(conn *sql.DB, id int) (models.Board, error) {
-	row := conn.QueryRow("select id, name, description from card where id = ?", id)
+	row := conn.QueryRow("select id, name, description from board where id = ?", id)
 	board := new(models.Board)
 
 	err := row.Scan(&board.Id, &board.Name, &board.Description)
