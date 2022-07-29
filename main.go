@@ -31,6 +31,9 @@ func main() {
 
 	router.Get("/go-trello/boards", boardResource.ListBoards)
 	router.Get("/go-trello/boards/{boardId}", boardResource.GetBoard)
+	router.Post("/go-trello/boards", boardResource.CreateBoard)
+	router.Put("/go-trello/boards", boardResource.UpdateBoard)
+	router.Delete("/go-trello/boards/{boardId}", boardResource.DeleteBoard)
 
 	http.ListenAndServe(":3000", router)
 
