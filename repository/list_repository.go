@@ -20,17 +20,17 @@ func InsertList(conn *sql.DB, list models.List) (models.List, error) {
 }
 
 func GetList(conn *sql.DB, id int) (models.List, error) {
-	row := conn.QueryRow("select id, name, pos from list where id = ?", id)
+	row := conn.QueryRow("select id, name, pos, id_board from list where id = ?", id)
 	list := new(models.List)
 
-	err := row.Scan(&list.Id, &list.Name, &list.Order)
+	err := row.Scan(&list.Id, &list.Name, &list.Order, &list.IdBoard)
 	utils.ReturnError(err)
 
 	return *list, err
 }
 
 func GetListsByBoard(conn *sql.DB, id int) ([]models.List, error) {
-	rows, err := conn.Query("select id, name, pos from list where id_board = ?", id)
+	rows, err := conn.Query("select id, name, pos, id_board from list where id_board = ?", id)
 	utils.ReturnError(err)
 	defer rows.Close()
 
@@ -38,7 +38,7 @@ func GetListsByBoard(conn *sql.DB, id int) ([]models.List, error) {
 
 	for rows.Next() {
 		var list models.List
-		rows.Scan(&list.Id, &list.Name, &list.Order)
+		rows.Scan(&list.Id, &list.Name, &list.Order, &list.IdBoard)
 		lists = append(lists, list)
 	}
 	return lists, err
@@ -46,7 +46,7 @@ func GetListsByBoard(conn *sql.DB, id int) ([]models.List, error) {
 
 func GetAllLists(conn *sql.DB) ([]models.List, error) {
 
-	rows, err := conn.Query("select id, name, pos from list")
+	rows, err := conn.Query("select id, name, pos, id_board from list")
 	utils.ReturnError(err)
 	defer rows.Close()
 
@@ -54,7 +54,7 @@ func GetAllLists(conn *sql.DB) ([]models.List, error) {
 
 	for rows.Next() {
 		var list models.List
-		rows.Scan(&list.Id, &list.Name, &list.Order)
+		rows.Scan(&list.Id, &list.Name, &list.Order, &list.IdBoard)
 		lists = append(lists, list)
 	}
 	return lists, err

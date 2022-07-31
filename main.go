@@ -8,9 +8,11 @@ import (
 
 	"github.com/ffsales/go-trello-poc/config"
 	"github.com/ffsales/go-trello-poc/db"
-	"github.com/ffsales/go-trello-poc/handlers"
 	"github.com/ffsales/go-trello-poc/models"
 	"github.com/ffsales/go-trello-poc/repository"
+	board "github.com/ffsales/go-trello-poc/routes/boards"
+	"github.com/ffsales/go-trello-poc/routes/cards"
+	"github.com/ffsales/go-trello-poc/routes/lists"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 )
@@ -27,13 +29,27 @@ func main() {
 
 	router.Use(middleware.Logger)
 
-	boardResource := handlers.GetResource()
+	trelloResource := board.GetResource()
 
-	router.Get("/go-trello/boards", boardResource.ListBoards)
-	router.Get("/go-trello/boards/{boardId}", boardResource.GetBoard)
-	router.Post("/go-trello/boards", boardResource.CreateBoard)
-	router.Put("/go-trello/boards", boardResource.UpdateBoard)
-	router.Delete("/go-trello/boards/{boardId}", boardResource.DeleteBoard)
+	router.Get("/go-trello/boards", trelloResource.GetAllBoards)
+	router.Get("/go-trello/boards/{boardId}", trelloResource.GetBoard)
+	router.Post("/go-trello/boards", trelloResource.CreateBoard)
+	router.Put("/go-trello/boards/{boardId}", trelloResource.UpdateBoard)
+	router.Delete("/go-trello/boards/{boardId}", trelloResource.DeleteBoard)
+
+	router.Get("/go-trello/boards/{boardId}/lists", lists.GetListsByBoard)
+	router.Get("/go-trello/lists", lists.GetAllLists)
+	router.Get("/go-trello/lists/{listId}", lists.GetList)
+	router.Post("/go-trello/lists", lists.CreateList)
+	router.Put("/go-trello/lists/{listId}", lists.UpdateList)
+	router.Delete("/go-trello/lists/{listId}", lists.DeleteList)
+
+	router.Get("/go-trello/lists/{listId}/cards", cards.GetCardsByList)
+	router.Get("/go-trello/cards", cards.GetAllCards)
+	router.Get("/go-trello/cards/{cardId}", cards.GetCard)
+	router.Post("/go-trello/cards", cards.CreateCard)
+	router.Put("/go-trello/cards/{cardId}", cards.UpdateCard)
+	router.Delete("/go-trello/cards/{cardId}", cards.DeleteCard)
 
 	http.ListenAndServe(":3000", router)
 

@@ -21,10 +21,10 @@ func InsertCard(conn *sql.DB, card models.Card) (models.Card, error) {
 
 func GetCard(conn *sql.DB, id int) (models.Card, error) {
 
-	row := conn.QueryRow("select id, name, finished from card where id = ?", id)
+	row := conn.QueryRow("select id, name, finished, id_list from card where id = ?", id)
 	card := new(models.Card)
 
-	err := row.Scan(&card.Id, &card.Name, &card.Finished)
+	err := row.Scan(&card.Id, &card.Name, &card.Finished, &card.IdList)
 	utils.ReturnError(err)
 
 	return *card, err
@@ -32,7 +32,7 @@ func GetCard(conn *sql.DB, id int) (models.Card, error) {
 
 func GetCardsByList(conn *sql.DB, id int) ([]models.Card, error) {
 
-	rows, err := conn.Query("select id, name, finished from card where id_card = ?", id)
+	rows, err := conn.Query("select id, name, finished, id_list from card where id_card = ?", id)
 	utils.ReturnError(err)
 	defer rows.Close()
 
@@ -40,7 +40,7 @@ func GetCardsByList(conn *sql.DB, id int) ([]models.Card, error) {
 
 	for rows.Next() {
 		var card models.Card
-		rows.Scan(&card.Id, &card.Name, &card.Finished)
+		rows.Scan(&card.Id, &card.Name, &card.Finished, &card.IdList)
 		cards = append(cards, card)
 	}
 	return cards, err
@@ -48,7 +48,7 @@ func GetCardsByList(conn *sql.DB, id int) ([]models.Card, error) {
 
 func GetAllCards(conn *sql.DB) ([]models.Card, error) {
 
-	rows, err := conn.Query("select id, name, finished from card")
+	rows, err := conn.Query("select id, name, finished, id_list from card")
 	utils.ReturnError(err)
 	defer rows.Close()
 
@@ -56,7 +56,7 @@ func GetAllCards(conn *sql.DB) ([]models.Card, error) {
 
 	for rows.Next() {
 		var card models.Card
-		rows.Scan(&card.Id, &card.Name, &card.Finished)
+		rows.Scan(&card.Id, &card.Name, &card.Finished, &card.IdList)
 		cards = append(cards, card)
 	}
 	return cards, err
