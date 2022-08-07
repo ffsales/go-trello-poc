@@ -29,31 +29,31 @@ func GetList(conn *sql.DB, id int) (models.List, error) {
 	return *list, err
 }
 
-func GetListsByBoard(conn *sql.DB, id int) ([]models.List, error) {
+func GetListsByBoard(conn *sql.DB, id int) ([]*models.List, error) {
 	rows, err := conn.Query("select id, name, pos, id_board from list where id_board = ?", id)
 	utils.ReturnError(err)
 	defer rows.Close()
 
-	var lists []models.List
+	var lists []*models.List
 
 	for rows.Next() {
-		var list models.List
+		list := new(models.List)
 		rows.Scan(&list.Id, &list.Name, &list.Order, &list.IdBoard)
 		lists = append(lists, list)
 	}
 	return lists, err
 }
 
-func GetAllLists(conn *sql.DB) ([]models.List, error) {
+func GetAllLists(conn *sql.DB) ([]*models.List, error) {
 
 	rows, err := conn.Query("select id, name, pos, id_board from list")
 	utils.ReturnError(err)
 	defer rows.Close()
 
-	var lists []models.List
+	var lists []*models.List
 
 	for rows.Next() {
-		var list models.List
+		list := new(models.List)
 		rows.Scan(&list.Id, &list.Name, &list.Order, &list.IdBoard)
 		lists = append(lists, list)
 	}

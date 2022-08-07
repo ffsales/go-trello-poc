@@ -30,32 +30,32 @@ func GetCard(conn *sql.DB, id int) (models.Card, error) {
 	return *card, err
 }
 
-func GetCardsByList(conn *sql.DB, id int) ([]models.Card, error) {
+func GetCardsByList(conn *sql.DB, id int) ([]*models.Card, error) {
 
-	rows, err := conn.Query("select id, name, finished, id_list from card where id_card = ?", id)
+	rows, err := conn.Query("select id, name, finished, id_list from card where id_list = ?", id)
 	utils.ReturnError(err)
 	defer rows.Close()
 
-	var cards []models.Card
+	var cards []*models.Card
 
 	for rows.Next() {
-		var card models.Card
+		card := new(models.Card)
 		rows.Scan(&card.Id, &card.Name, &card.Finished, &card.IdList)
 		cards = append(cards, card)
 	}
 	return cards, err
 }
 
-func GetAllCards(conn *sql.DB) ([]models.Card, error) {
+func GetAllCards(conn *sql.DB) ([]*models.Card, error) {
 
 	rows, err := conn.Query("select id, name, finished, id_list from card")
 	utils.ReturnError(err)
 	defer rows.Close()
 
-	var cards []models.Card
+	var cards []*models.Card
 
 	for rows.Next() {
-		var card models.Card
+		card := new(models.Card)
 		rows.Scan(&card.Id, &card.Name, &card.Finished, &card.IdList)
 		cards = append(cards, card)
 	}

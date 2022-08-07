@@ -10,6 +10,7 @@ import (
 	"github.com/ffsales/go-trello-poc/models"
 	"github.com/ffsales/go-trello-poc/repository"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/render"
 )
 
 func GetListsByBoard(w http.ResponseWriter, r *http.Request) {
@@ -24,9 +25,16 @@ func GetListsByBoard(w http.ResponseWriter, r *http.Request) {
 
 	lists, _ := repository.GetListsByBoard(conn, boardId)
 
+	respLists := []render.Renderer{}
+
+	for _, list := range lists {
+		respLists = append(respLists, list.ToResponse())
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 
-	json.NewEncoder(w).Encode(lists)
+	render.Status(r, http.StatusOK)
+	render.RenderList(w, r, respLists)
 }
 
 func GetAllLists(w http.ResponseWriter, r *http.Request) {
@@ -35,9 +43,16 @@ func GetAllLists(w http.ResponseWriter, r *http.Request) {
 
 	lists, _ := repository.GetAllLists(conn)
 
+	respLists := []render.Renderer{}
+
+	for _, list := range lists {
+		respLists = append(respLists, list.ToResponse())
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 
-	json.NewEncoder(w).Encode(lists)
+	render.Status(r, http.StatusOK)
+	render.RenderList(w, r, respLists)
 }
 
 func GetList(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +69,8 @@ func GetList(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	json.NewEncoder(w).Encode(list)
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, list.ToResponse())
 }
 
 func CreateList(w http.ResponseWriter, r *http.Request) {
@@ -80,13 +96,13 @@ func CreateList(w http.ResponseWriter, r *http.Request) {
 		panic("board inválido")
 	}
 
-	respList, err := repository.InsertList(conn, requestList)
+	list, err := repository.InsertList(conn, requestList)
 	if err != nil {
 		panic(err)
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(respList)
+	render.Status(r, http.StatusCreated)
+	render.Render(w, r, list.ToResponse())
 }
 
 func UpdateList(w http.ResponseWriter, r *http.Request) {
@@ -123,8 +139,8 @@ func UpdateList(w http.ResponseWriter, r *http.Request) {
 		panic(fmt.Sprintf("Error: %d rows affected", rows))
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(foundList)
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, foundList.ToResponse())
 }
 
 func DeleteList(w http.ResponseWriter, r *http.Request) {

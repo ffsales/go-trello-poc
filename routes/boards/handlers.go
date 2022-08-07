@@ -1,4 +1,4 @@
-package board
+package boards
 
 import (
 	"encoding/json"
@@ -10,15 +10,10 @@ import (
 	"github.com/ffsales/go-trello-poc/models"
 	"github.com/ffsales/go-trello-poc/repository"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/render"
 )
 
-type resource struct{}
-
-func GetResource() *resource {
-	return new(resource)
-}
-
-func (rsc resource) GetAllBoards(w http.ResponseWriter, r *http.Request) {
+func GetAllBoards(w http.ResponseWriter, r *http.Request) {
 	conn := db.GetConnection()
 	defer conn.Close()
 
@@ -26,10 +21,17 @@ func (rsc resource) GetAllBoards(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	json.NewEncoder(w).Encode(boards)
+	respBoards := []render.Renderer{}
+
+	for _, board := range boards {
+		respBoards = append(respBoards, board.ToResponse())
+	}
+
+	render.Status(r, http.StatusOK)
+	render.RenderList(w, r, respBoards)
 }
 
-func (rsc resource) GetBoard(w http.ResponseWriter, r *http.Request) {
+func GetBoard(w http.ResponseWriter, r *http.Request) {
 	conn := db.GetConnection()
 	defer conn.Close()
 
@@ -44,11 +46,11 @@ func (rsc resource) GetBoard(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(board)
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, board.ToResponse())
 }
 
-func (rsc resource) CreateBoard(w http.ResponseWriter, r *http.Request) {
+func CreateBoard(w http.ResponseWriter, r *http.Request) {
 
 	if r.Body == nil {
 		panic("Body empty!")
@@ -63,16 +65,16 @@ func (rsc resource) CreateBoard(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	respBoard, err := repository.InsertBoard(conn, requestBoard)
+	board, err := repository.InsertBoard(conn, requestBoard)
 	if err != nil {
 		panic(err)
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(respBoard)
+	render.Status(r, http.StatusCreated)
+	render.Render(w, r, board.ToResponse())
 }
 
-func (rsc resource) UpdateBoard(w http.ResponseWriter, r *http.Request) {
+func UpdateBoard(w http.ResponseWriter, r *http.Request) {
 	if r.Body == nil {
 		panic("Body empty!")
 	}
@@ -106,11 +108,11 @@ func (rsc resource) UpdateBoard(w http.ResponseWriter, r *http.Request) {
 		panic(fmt.Sprintf("Error: %d rows affected", rows))
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(foundBoard)
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, foundBoard.ToResponse())
 }
 
-func (rsc resource) DeleteBoard(w http.ResponseWriter, r *http.Request) {
+func DeleteBoard(w http.ResponseWriter, r *http.Request) {
 	conn := db.GetConnection()
 	defer conn.Close()
 

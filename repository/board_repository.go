@@ -29,16 +29,16 @@ func GetBoard(conn *sql.DB, id int) (models.Board, error) {
 	return *board, err
 }
 
-func GetAllBoards(conn *sql.DB) ([]models.Board, error) {
+func GetAllBoards(conn *sql.DB) ([]*models.Board, error) {
 
 	rows, err := conn.Query("select id, name, description from board")
 	utils.ReturnError(err)
 	defer rows.Close()
 
-	var boards []models.Board
+	var boards []*models.Board
 
 	for rows.Next() {
-		var board models.Board
+		board := new(models.Board)
 		rows.Scan(&board.Id, &board.Name, &board.Description)
 		boards = append(boards, board)
 	}

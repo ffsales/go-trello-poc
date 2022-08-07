@@ -10,6 +10,7 @@ import (
 	"github.com/ffsales/go-trello-poc/models"
 	"github.com/ffsales/go-trello-poc/repository"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/render"
 )
 
 func GetCardsByList(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +27,14 @@ func GetCardsByList(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	json.NewEncoder(w).Encode(cards)
+	respCards := []render.Renderer{}
+
+	for _, card := range cards {
+		respCards = append(respCards, card.ToResponse())
+	}
+
+	render.Status(r, http.StatusOK)
+	render.RenderList(w, r, respCards)
 }
 
 func GetAllCards(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +45,14 @@ func GetAllCards(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	json.NewEncoder(w).Encode(cards)
+	respCards := []render.Renderer{}
+
+	for _, card := range cards {
+		respCards = append(respCards, card.ToResponse())
+	}
+
+	render.Status(r, http.StatusOK)
+	render.RenderList(w, r, respCards)
 }
 
 func GetCard(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +69,8 @@ func GetCard(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	json.NewEncoder(w).Encode(card)
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, card.ToResponse())
 }
 
 func CreateCard(w http.ResponseWriter, r *http.Request) {
@@ -80,13 +96,13 @@ func CreateCard(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	respCard, err := repository.InsertCard(conn, requestCard)
+	card, err := repository.InsertCard(conn, requestCard)
 	if err != nil {
 		panic(err)
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(respCard)
+	render.Status(r, http.StatusCreated)
+	render.Render(w, r, card.ToResponse())
 }
 
 func UpdateCard(w http.ResponseWriter, r *http.Request) {
@@ -123,8 +139,8 @@ func UpdateCard(w http.ResponseWriter, r *http.Request) {
 		panic(fmt.Sprintf("Error: %d rows affected", rows))
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(foundCard)
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, foundCard.ToResponse())
 }
 
 func DeleteCard(w http.ResponseWriter, r *http.Request) {
