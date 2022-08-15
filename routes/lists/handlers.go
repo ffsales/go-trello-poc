@@ -9,6 +9,7 @@ import (
 	"github.com/ffsales/go-trello-poc/db"
 	"github.com/ffsales/go-trello-poc/models"
 	"github.com/ffsales/go-trello-poc/repository"
+	"github.com/ffsales/go-trello-poc/utils"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 )
@@ -20,10 +21,15 @@ func GetListsByBoard(w http.ResponseWriter, r *http.Request) {
 	strBoardId := chi.URLParam(r, "boardId")
 	boardId, err := strconv.Atoi(strBoardId)
 	if err != nil {
-		panic(err)
+		utils.BadRequestError(w, r, err, "Invalid id")
+		return
 	}
 
-	lists, _ := repository.GetListsByBoard(conn, boardId)
+	lists, err := repository.GetListsByBoard(conn, boardId)
+	if err != nil {
+		utils.ServiceUnavailableError(w, r, err, "Intern error")
+		return
+	}
 
 	respLists := []render.Renderer{}
 
@@ -41,7 +47,11 @@ func GetAllLists(w http.ResponseWriter, r *http.Request) {
 	conn := db.GetConnection()
 	defer conn.Close()
 
-	lists, _ := repository.GetAllLists(conn)
+	lists, err := repository.GetAllLists(conn)
+	if err != nil {
+		utils.ServiceUnavailableError(w, r, err, "Intern error")
+		return
+	}
 
 	respLists := []render.Renderer{}
 
@@ -62,7 +72,8 @@ func GetList(w http.ResponseWriter, r *http.Request) {
 	strListId := chi.URLParam(r, "listId")
 	listId, err := strconv.Atoi(strListId)
 	if err != nil {
-		panic(err)
+		utils.BadRequestError(w, r, err, "Invalid error")
+		return
 	}
 
 	list, _ := repository.GetList(conn, listId)
@@ -74,7 +85,7 @@ func GetList(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateList(w http.ResponseWriter, r *http.Request) {
-
+	var err error
 	if r.Body == nil {
 		panic("Body empty!")
 	}
@@ -85,20 +96,24 @@ func CreateList(w http.ResponseWriter, r *http.Request) {
 	var requestList models.List
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&requestList); err != nil {
-		panic(err)
+		utils.UnprocessableEntityError(w, r, err, "Invalid body")
+		return
 	}
 
 	if requestList.IdBoard <= 0 {
-		panic("erro")
+		utils.UnprocessableEntityError(w, r, err, "Invalid body")
+		return
 	}
 
 	if board, err := repository.GetBoard(conn, requestList.IdBoard); err != nil || board.Id <= 0 {
-		panic("board inválido")
+		utils.NotFoundError(w, r, err, "Not found")
+		return
 	}
 
 	list, err := repository.InsertList(conn, requestList)
 	if err != nil {
-		panic(err)
+		utils.ServiceUnavailableError(w, r, err, "Intern error")
+		return
 	}
 
 	render.Status(r, http.StatusCreated)
@@ -106,8 +121,10 @@ func CreateList(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateList(w http.ResponseWriter, r *http.Request) {
+	var err error
 	if r.Body == nil {
-		panic("Body empty!")
+		utils.UnprocessableEntityError(w, r, err, "Empty body")
+		return
 	}
 
 	conn := db.GetConnection()
@@ -116,27 +133,32 @@ func UpdateList(w http.ResponseWriter, r *http.Request) {
 	strListId := chi.URLParam(r, "listId")
 	listId, err := strconv.Atoi(strListId)
 	if err != nil {
-		panic(err)
+		utils.BadRequestError(w, r, err, "Invalid id")
+		return
 	}
 
 	var requestList models.List
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&requestList); err != nil {
-		panic(err)
+		utils.UnprocessableEntityError(w, r, err, "Invalid body")
+		return
 	}
 
 	foundList, err := repository.GetList(conn, int(listId))
 	if err != nil {
-		panic(err)
+		utils.NotFoundError(w, r, err, "Not found")
+		return
 	}
 
 	foundList.Name = requestList.Name
 	foundList.Order = requestList.Order
 
 	if rows, err := repository.UpdateList(conn, &foundList); err != nil {
-		panic(err)
+		utils.ServiceUnavailableError(w, r, err, "Intern error")
+		return
 	} else if rows != 1 {
-		panic(fmt.Sprintf("Error: %d rows affected", rows))
+		utils.UnprocessableEntityError(w, r, err, fmt.Sprintf("Error: %d rows affected", rows))
+		return
 	}
 
 	render.Status(r, http.StatusOK)
@@ -150,13 +172,16 @@ func DeleteList(w http.ResponseWriter, r *http.Request) {
 	strListId := chi.URLParam(r, "listId")
 	listId, err := strconv.Atoi(strListId)
 	if err != nil {
-		panic(err)
+		utils.BadRequestError(w, r, err, "Invalid id")
+		return
 	}
 
 	if rows, err := repository.DeleteList(conn, listId); err != nil {
-		panic(err)
+		utils.ServiceUnavailableError(w, r, err, "Intern error")
+		return
 	} else if rows != 1 {
-		panic(fmt.Sprintf("Error: %d rows affected", rows))
+		utils.ServiceUnavailableError(w, r, err, fmt.Sprintf("Error: %d rows affected", rows))
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)

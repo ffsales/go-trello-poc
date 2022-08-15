@@ -4,15 +4,18 @@ import (
 	"database/sql"
 
 	"github.com/ffsales/go-trello-poc/models"
-	"github.com/ffsales/go-trello-poc/utils"
 )
 
 func InsertList(conn *sql.DB, list models.List) (models.List, error) {
 	stmt, err := conn.Prepare("insert into list(name, pos, id_board) values (?, ?, ?)")
-	utils.ReturnError(err)
+	if err != nil {
+		return list, err
+	}
 
 	res, err := stmt.Exec(list.Name, list.Order, list.IdBoard)
-	utils.ReturnError(err)
+	if err != nil {
+		return list, err
+	}
 
 	list.Id, err = res.LastInsertId()
 
@@ -24,17 +27,20 @@ func GetList(conn *sql.DB, id int) (models.List, error) {
 	list := new(models.List)
 
 	err := row.Scan(&list.Id, &list.Name, &list.Order, &list.IdBoard)
-	utils.ReturnError(err)
+	if err != nil {
+		return *list, err
+	}
 
 	return *list, err
 }
 
 func GetListsByBoard(conn *sql.DB, id int) ([]*models.List, error) {
-	rows, err := conn.Query("select id, name, pos, id_board from list where id_board = ?", id)
-	utils.ReturnError(err)
-	defer rows.Close()
-
 	var lists []*models.List
+	rows, err := conn.Query("select id, name, pos, id_board from list where id_board = ?", id)
+	if err != nil {
+		return lists, err
+	}
+	defer rows.Close()
 
 	for rows.Next() {
 		list := new(models.List)
@@ -45,12 +51,13 @@ func GetListsByBoard(conn *sql.DB, id int) ([]*models.List, error) {
 }
 
 func GetAllLists(conn *sql.DB) ([]*models.List, error) {
+	var lists []*models.List
 
 	rows, err := conn.Query("select id, name, pos, id_board from list")
-	utils.ReturnError(err)
+	if err != nil {
+		return lists, err
+	}
 	defer rows.Close()
-
-	var lists []*models.List
 
 	for rows.Next() {
 		list := new(models.List)
@@ -62,7 +69,9 @@ func GetAllLists(conn *sql.DB) ([]*models.List, error) {
 
 func UpdateList(conn *sql.DB, list *models.List) (int64, error) {
 	res, err := conn.Exec("update list set name = ?, pos = ? where id = ?", list.Name, list.Order, list.Id)
-	utils.ReturnError(err)
+	if err != nil {
+		return 0, err
+	}
 
 	rows, err := res.RowsAffected()
 
@@ -72,15 +81,25 @@ func UpdateList(conn *sql.DB, list *models.List) (int64, error) {
 func DeleteList(conn *sql.DB, id int) (rows int64, err error) {
 
 	transaction, err := conn.Begin()
-	utils.ReturnError(err)
+	if err != nil {
+		return 0, err
+	}
 
 	_, err = transaction.Exec("delete from card where id_list = ?", id)
-	utils.ReturnError(err)
+	if err != nil {
+		return 0, err
+	}
 
 	res, err := transaction.Exec("delete from list where id = ?", id)
-	utils.ReturnError(err)
+	if err != nil {
+		return 0, err
+	}
 
 	rows, err = res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+
 	transaction.Commit()
 
 	return

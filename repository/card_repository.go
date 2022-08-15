@@ -4,15 +4,19 @@ import (
 	"database/sql"
 
 	"github.com/ffsales/go-trello-poc/models"
-	"github.com/ffsales/go-trello-poc/utils"
 )
 
 func InsertCard(conn *sql.DB, card models.Card) (models.Card, error) {
 
 	stmt, err := conn.Prepare("insert into card(name, finished, id_list) values (?, ?, ?)")
-	utils.ReturnError(err)
+	if err != nil {
+		return card, err
+	}
+
 	res, err := stmt.Exec(card.Name, card.Finished, card.IdList)
-	utils.ReturnError(err)
+	if err != nil {
+		return card, err
+	}
 
 	card.Id, err = res.LastInsertId()
 
@@ -25,18 +29,20 @@ func GetCard(conn *sql.DB, id int) (models.Card, error) {
 	card := new(models.Card)
 
 	err := row.Scan(&card.Id, &card.Name, &card.Finished, &card.IdList)
-	utils.ReturnError(err)
 
 	return *card, err
 }
 
 func GetCardsByList(conn *sql.DB, id int) ([]*models.Card, error) {
 
-	rows, err := conn.Query("select id, name, finished, id_list from card where id_list = ?", id)
-	utils.ReturnError(err)
-	defer rows.Close()
-
 	var cards []*models.Card
+
+	rows, err := conn.Query("select id, name, finished, id_list from card where id_list = ?", id)
+	if err != nil {
+		return cards, err
+	}
+
+	defer rows.Close()
 
 	for rows.Next() {
 		card := new(models.Card)
@@ -47,12 +53,13 @@ func GetCardsByList(conn *sql.DB, id int) ([]*models.Card, error) {
 }
 
 func GetAllCards(conn *sql.DB) ([]*models.Card, error) {
+	var cards []*models.Card
 
 	rows, err := conn.Query("select id, name, finished, id_list from card")
-	utils.ReturnError(err)
+	if err != nil {
+		return cards, err
+	}
 	defer rows.Close()
-
-	var cards []*models.Card
 
 	for rows.Next() {
 		card := new(models.Card)
@@ -64,18 +71,28 @@ func GetAllCards(conn *sql.DB) ([]*models.Card, error) {
 
 func UpdateCard(conn *sql.DB, card *models.Card) (int64, error) {
 	res, err := conn.Exec("update card set name = ?, finished = ? where id = ?", card.Name, card.Finished, card.Id)
-	utils.ReturnError(err)
+	if err != nil {
+		return 0, err
+	}
 
 	rows, err := res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
 
 	return rows, err
 }
 
 func DeleteCard(conn *sql.DB, id int) (rows int64, err error) {
 	res, err := conn.Exec("delete from card where id = ?", id)
-	utils.ReturnError(err)
+	if err != nil {
+		return 0, err
+	}
 
 	rows, err = res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
 
 	return
 }

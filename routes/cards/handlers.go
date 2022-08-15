@@ -9,6 +9,7 @@ import (
 	"github.com/ffsales/go-trello-poc/db"
 	"github.com/ffsales/go-trello-poc/models"
 	"github.com/ffsales/go-trello-poc/repository"
+	"github.com/ffsales/go-trello-poc/utils"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 )
@@ -20,12 +21,13 @@ func GetCardsByList(w http.ResponseWriter, r *http.Request) {
 	strListId := chi.URLParam(r, "listId")
 	listId, err := strconv.Atoi(strListId)
 	if err != nil {
-		panic(err)
+		utils.BadRequestError(w, r, err, "Invalid Parameter")
 	}
 
-	cards, _ := repository.GetCardsByList(conn, listId)
-
-	w.Header().Set("Content-Type", "application/json")
+	cards, err := repository.GetCardsByList(conn, listId)
+	if err != nil {
+		utils.ServiceUnavailableError(w, r, err, "Error Service")
+	}
 
 	respCards := []render.Renderer{}
 
@@ -33,17 +35,17 @@ func GetCardsByList(w http.ResponseWriter, r *http.Request) {
 		respCards = append(respCards, card.ToResponse())
 	}
 
-	render.Status(r, http.StatusOK)
-	render.RenderList(w, r, respCards)
+	utils.OkList(w, r, respCards)
 }
 
 func GetAllCards(w http.ResponseWriter, r *http.Request) {
 	conn := db.GetConnection()
 	defer conn.Close()
 
-	cards, _ := repository.GetAllCards(conn)
-
-	w.Header().Set("Content-Type", "application/json")
+	cards, err := repository.GetAllCards(conn)
+	if err != nil {
+		utils.ServiceUnavailableError(w, r, err, "Error Service")
+	}
 
 	respCards := []render.Renderer{}
 
@@ -51,8 +53,7 @@ func GetAllCards(w http.ResponseWriter, r *http.Request) {
 		respCards = append(respCards, card.ToResponse())
 	}
 
-	render.Status(r, http.StatusOK)
-	render.RenderList(w, r, respCards)
+	utils.OkList(w, r, respCards)
 }
 
 func GetCard(w http.ResponseWriter, r *http.Request) {
@@ -62,21 +63,24 @@ func GetCard(w http.ResponseWriter, r *http.Request) {
 	strCardId := chi.URLParam(r, "cardId")
 	cardId, err := strconv.Atoi(strCardId)
 	if err != nil {
-		panic(err)
+		utils.UnprocessableEntityError(w, r, err, "Invalid Parameter")
+		return
 	}
 
-	card, _ := repository.GetCard(conn, cardId)
+	card, err := repository.GetCard(conn, cardId)
+	if err != nil || card == (models.Card{}) {
+		utils.NotFoundError(w, r, err, "Card Not Found")
+		return
+	}
 
-	w.Header().Set("Content-Type", "application/json")
-
-	render.Status(r, http.StatusOK)
-	render.Render(w, r, card.ToResponse())
+	utils.Ok(w, r, card.ToResponse())
 }
 
 func CreateCard(w http.ResponseWriter, r *http.Request) {
-
+	var err error
 	if r.Body == nil {
-		panic("Body empty!")
+		utils.UnprocessableEntityError(w, r, err, "Empty body")
+		return
 	}
 
 	conn := db.GetConnection()
@@ -85,20 +89,24 @@ func CreateCard(w http.ResponseWriter, r *http.Request) {
 	var requestCard models.Card
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&requestCard); err != nil {
-		panic(err)
+		utils.UnprocessableEntityError(w, r, err, "Invalid request")
+		return
 	}
 
 	if requestCard.IdList <= 0 {
-		panic("erro")
+		utils.UnprocessableEntityError(w, r, err, "Invalid request")
+		return
 	}
 
 	if list, err := repository.GetList(conn, int(requestCard.IdList)); err != nil || list.Id <= 0 {
-		panic(err)
+		utils.ServiceUnavailableError(w, r, err, "Intern error")
+		return
 	}
 
 	card, err := repository.InsertCard(conn, requestCard)
 	if err != nil {
-		panic(err)
+		utils.ServiceUnavailableError(w, r, err, "Intern error")
+		return
 	}
 
 	render.Status(r, http.StatusCreated)
@@ -106,8 +114,10 @@ func CreateCard(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateCard(w http.ResponseWriter, r *http.Request) {
+	var err error
 	if r.Body == nil {
-		panic("Body empty!")
+		utils.UnprocessableEntityError(w, r, err, "Empty body")
+		return
 	}
 
 	conn := db.GetConnection()
@@ -116,27 +126,32 @@ func UpdateCard(w http.ResponseWriter, r *http.Request) {
 	strCardId := chi.URLParam(r, "cardId")
 	cardId, err := strconv.Atoi(strCardId)
 	if err != nil {
-		panic(err)
+		utils.BadRequestError(w, r, err, "Invalid id")
+		return
 	}
 
 	var requestCard models.Card
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&requestCard); err != nil {
-		panic(err)
+		utils.UnprocessableEntityError(w, r, err, "Invalid body")
+		return
 	}
 
 	foundCard, err := repository.GetCard(conn, int(cardId))
 	if err != nil {
-		panic(err)
+		utils.ServiceUnavailableError(w, r, err, "Intern error")
+		return
 	}
 
 	foundCard.Name = requestCard.Name
 	foundCard.Finished = requestCard.Finished
 
 	if rows, err := repository.UpdateCard(conn, &foundCard); err != nil {
-		panic(err)
+		utils.ServiceUnavailableError(w, r, err, "Intern error")
+		return
 	} else if rows != 1 {
-		panic(fmt.Sprintf("Error: %d rows affected", rows))
+		utils.BadRequestError(w, r, err, fmt.Sprintf("Error: %d rows affected", rows))
+		return
 	}
 
 	render.Status(r, http.StatusOK)
@@ -150,13 +165,16 @@ func DeleteCard(w http.ResponseWriter, r *http.Request) {
 	strCardId := chi.URLParam(r, "cardId")
 	cardId, err := strconv.Atoi(strCardId)
 	if err != nil {
-		panic(err)
+		utils.BadRequestError(w, r, err, "Invalid id")
+		return
 	}
 
 	if rows, err := repository.DeleteCard(conn, cardId); err != nil {
-		panic(err)
+		utils.ServiceUnavailableError(w, r, err, "Intern error")
+		return
 	} else if rows != 1 {
-		panic(fmt.Sprintf("Error: %d rows affected", rows))
+		utils.BadRequestError(w, r, err, fmt.Sprintf("Error: %d rows affected", rows))
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
