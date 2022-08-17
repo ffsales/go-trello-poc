@@ -1,3 +1,8 @@
+O projeto tem como objetivo fazer uma demonstração de uma api rest na linguagem GO simulando a aplicação Trello
+
+Abaixo estão as instruções:
+
+
 ===================================================================================================================================================
 Comando para subir uma instância do MySQL
 
@@ -32,6 +37,13 @@ CREATE TABLE card (
 	primary key (id),
     FOREIGN KEY(id_list) REFERENCES list(id)
 );
+
+===================================================================================================================================================
+Entrar na raiz do projeto via terminal e digitar:
+go run *.go
+
+Na tela aparecerá o seguinte resultado:
+Iniciando o |||::Go Trello::|||
 
 ===================================================================================================================================================
 Importar o arquivo "collection.json" no Insomnia para utilizar as Apis do projeto
