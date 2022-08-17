@@ -49,11 +49,3 @@ func returnError(w http.ResponseWriter, r *http.Request, status int, err error, 
 	render.Status(r, status)
 	render.Render(w, r, response)
 }
-
-// func ReturnError(err error) {
-// 	fmt.Println(err)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 		return
-// 	}
-// }

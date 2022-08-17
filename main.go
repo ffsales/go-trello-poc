@@ -23,4 +23,5 @@ func main() {
 	cards.GetRoutes(router)
 
 	http.ListenAndServe(":3000", router)
+	fmt.Println("Finalizando o |||::Go Trello::|||")
 }
